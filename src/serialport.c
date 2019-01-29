@@ -320,6 +320,68 @@ SerialRet_t openSerialPort( const char * portname , uint32_t baudrate , Stopbit_
     return( SerialRet_ok ) ;
 }
 
+SerialRet_t readByteFromSerialPort( uint8_t * buffer )
+{
+    DWORD bytesRead = 0 ;
+    DWORD dwError ;
+    BOOL  boolRet ;
+
+    if( hSerial == INVALID_HANDLE_VALUE )
+    {
+        return( SerialRet_errorNotOpen ) ;
+    }
+    
+    if( buffer == NULL )
+    {
+        return( SerialRet_errorParam ) ;
+    }
+    /**********
+     *
+     * ReadFile Parameters
+     *
+     * HANDLE       hFile                : A handle to the device.
+     * LPVOID       lpBuffer             : A pointer to the buffer that receives the data read from a file or device.
+     * DWORD        nNumberOfBytesToRead : The maximum number of bytes to be read.
+     * LPDWORD      lpNumberOfBytesRead  : A pointer to the variable that receives the number of bytes read when using a synchronous hFile parameter.
+     * LPOVERLAPPED lpOverlapped         : A pointer to an OVERLAPPED structure if the hFile was opened with FILE_FLAG_OVERLAPPED, otherwise it can be NULL.
+     * 
+     **********/
+    boolRet = ReadFile( hSerial , ( LPVOID ) buffer , ( DWORD ) 1 , &bytesRead , NULL ) ;
+    if( boolRet == FALSE )
+    {
+        /**********
+         *
+         * ClearCommError Parameters
+         *
+         * HANDLE    hFile    : A handle to the communications device.
+         * LPDWORD   lpErrors : A pointer to a variable that receives a mask indicating the type of error.
+         *     - CE_RXOVER   (0001h - An input buffer overflow has occurred)
+         *     - CE_OVERRUN  (0002h - A character-buffer overrun has occurred)
+         *     - CE_RXPARITY (0004h - The hardware detected a parity error)
+         *     - CE_FRAME    (0008h - The hardware detected a framing error)
+         *     - CE_BREAK    (0010h - The hardware detected a break condition)
+         * LPCOMSTAT lpStat : A pointer to a COMSTAT structure in which the device's status information is returned, or null to ignore.
+         *
+         **********/
+		ClearCommError( hSerial , &dwError , NULL ) ;
+
+		if( dwError )
+        {
+            return( SerialRet_error ) ;
+        }
+        else
+        {
+            return( SerialRet_errorTimeout ) ;
+        }
+    }
+    else if( bytesRead == 0 )
+    {
+        return( SerialRet_errorTimeout ) ;
+    }
+    
+    return( SerialRet_ok ) ;
+}
+
 /**
  * \brief Read data from the serial port
  * \param hSerial        File HANDLE to the serial port
@@ -327,7 +389,7 @@ SerialRet_t openSerialPort( const char * portname , uint32_t baudrate , Stopbit_
  * \param buffersize    maximal size of the buffer area
  * \return                amount of data that was read
  **/
-SerialRet_t readFromSerialPort( uint8_t * buffer , uint32_t * pbuffersize )
+SerialRet_t readBufferFromSerialPort( uint8_t * buffer , uint32_t * pbuffersize )
 {
     DWORD bytesRead = 0 ;
     DWORD dwError ;
@@ -398,6 +460,36 @@ SerialRet_t readFromSerialPort( uint8_t * buffer , uint32_t * pbuffersize )
     return( SerialRet_ok ) ;
 }
 
+SerialRet_t writeByteToSerialPort( uint8_t data )
+{
+    DWORD dwBytesRead = 0 ;
+    BOOL boolRet ;
+
+    if( hSerial == INVALID_HANDLE_VALUE )
+    {
+        return( SerialRet_errorNotOpen ) ;
+    }
+    
+    /**********
+     *
+     * WriteFile Parameters
+     *
+     * HANDLE       hFile                  : A handle to the device.
+     * LPCVOID      lpBuffer               : A pointer to the buffer containing the data to be written to the file or device.
+     * DWORD        nNumberOfBytesToWrite  : The number of bytes to be written to the file or device.
+     * LPDWORD      lpNumberOfBytesWritten : A pointer to the variable that receives the number of bytes written when using a synchronous hFile parameter.
+     * LPOVERLAPPED lpOverlapped           : A pointer to an OVERLAPPED structure if the hFile was opened with FILE_FLAG_OVERLAPPED, otherwise it can be NULL.
+     * 
+     **********/
+    boolRet = WriteFile( hSerial , ( LPCVOID ) &data , ( DWORD ) 1 , &dwBytesRead , NULL ) ;
+    if( ( boolRet == FALSE ) || ( dwBytesRead != 1 ) )
+    {
+        return( SerialRet_error ) ;
+    }
+
+    return( SerialRet_ok ) ;
+}
+
 /**
  * \brief write data to the serial port
  * \param hSerial    File HANDLE to the serial port
@@ -405,7 +497,7 @@ SerialRet_t readFromSerialPort( uint8_t * buffer , uint32_t * pbuffersize )
  * \param length    amount of data to be read
  * \return            amount of data that was written
  **/
-SerialRet_t writeToSerialPort( uint8_t * data, uint32_t * plength )
+SerialRet_t writeBufferToSerialPort( uint8_t * data, uint32_t * plength )
 {
     DWORD dwBytesRead = 0 ;
     BOOL boolRet ;

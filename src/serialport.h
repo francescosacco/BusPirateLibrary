@@ -98,6 +98,8 @@ typedef enum SERIARET
  **/
 SerialRet_t openSerialPort( const char * portname , uint32_t baudrate , Stopbit_t stopbits , Parity_t parity , Handshake_t handshake ) ;
 
+SerialRet_t readByteFromSerialPort( uint8_t * buffer ) ;
+
 /**
  * \brief Read data from the serial port
  * \param hSerial        File HANDLE to the serial port
@@ -105,7 +107,9 @@ SerialRet_t openSerialPort( const char * portname , uint32_t baudrate , Stopbit_
  * \param buffersize    maximal size of the buffer area
  * \return                amount of data that was read
  **/
-SerialRet_t readFromSerialPort( uint8_t * buffer , uint32_t * pbuffersize ) ;
+SerialRet_t readBufferFromSerialPort( uint8_t * buffer , uint32_t * pbuffersize ) ;
+
+SerialRet_t writeByteToSerialPort( uint8_t data ) ;
 
 /**
  * \brief write data to the serial port
@@ -114,7 +118,7 @@ SerialRet_t readFromSerialPort( uint8_t * buffer , uint32_t * pbuffersize ) ;
  * \param length    amount of data to be read
  * \return            amount of data that was written
  **/
-SerialRet_t writeToSerialPort( uint8_t * data, uint32_t * plength ) ;
+SerialRet_t writeBufferToSerialPort( uint8_t * data, uint32_t * plength ) ;
 
 SerialRet_t closeSerialPort( void ) ;
 

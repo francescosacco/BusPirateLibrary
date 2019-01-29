@@ -7,6 +7,7 @@
  *
  * Here there's the functions for busPirate device. This project was
  * developed and tested using Bus Pirate v3.6.
+ *
  * @see http://github.com/francescosacco/BusPirateLibrary/
  *
  * Copyright (c) 2018, Francesco Sacco
@@ -129,7 +130,7 @@ libPirate_t libPirate_reset( void )
 
     dataSize = 1 ;
     cmd = BUSPIRATE_CMD_HARDRESET ;
-    serialRet = writeToSerialPort( &cmd , &dataSize ) ;
+    serialRet = writeBufferToSerialPort( &cmd , &dataSize ) ;
     if( serialRet != SerialRet_ok )
     {
         return( libPirate_errorSerial ) ;
@@ -138,7 +139,7 @@ libPirate_t libPirate_reset( void )
     do
     {
         dataSize = 1 ;
-        serialRet = readFromSerialPort( &dummy , &dataSize ) ;
+        serialRet = readBufferFromSerialPort( &dummy , &dataSize ) ;
     } while( serialRet == SerialRet_ok ) ;
   
     for( i = 0 ; i < BUSPIRATE_ATTEMPT_RESET ; i++ )
@@ -244,14 +245,14 @@ libPirate_t libPirate_adc( uint16_t * adc )
     
     dataSize = 1 ;
     cmd = BUSPIRATE_CMD_ADC ;
-    serialRet = writeToSerialPort( &cmd , &dataSize ) ;
+    serialRet = writeBufferToSerialPort( &cmd , &dataSize ) ;
     if( serialRet != SerialRet_ok )
     {
         return( libPirate_errorSerial ) ;
     }
     
     dataSize = 2 ;
-    serialRet = readFromSerialPort( readAdc , &dataSize ) ;
+    serialRet = readBufferFromSerialPort( readAdc , &dataSize ) ;
     if( serialRet != SerialRet_ok )
     {
         return( libPirate_errorSerial ) ;
@@ -361,14 +362,14 @@ libPirate_t libPirate_spiTransfer( uint8_t * buffer , uint16_t bufSize )
             return( libPirate_errorInit ) ;
         }
         
-        serialRet = writeToSerialPort( buffer + indexTransfer , &blockTransfer ) ;
+        serialRet = writeBufferToSerialPort( buffer + indexTransfer , &blockTransfer ) ;
         if( serialRet != SerialRet_ok )
         {
             return( serialRet ) ;
         }
         
         dataSize = blockTransfer ;
-        serialRet = readFromSerialPort( buffer + indexTransfer , &dataSize ) ;
+        serialRet = readBufferFromSerialPort( buffer + indexTransfer , &dataSize ) ;
         if( serialRet != SerialRet_ok )
         {
             return( serialRet ) ;
@@ -403,14 +404,14 @@ static SerialRet_t libPirate_cmdAck( uint8_t cmd )
     uint8_t     rsp = 0x00 ;
 
     dataSize = 1 ;
-    serialRet = writeToSerialPort( &cmd , &dataSize ) ;
+    serialRet = writeBufferToSerialPort( &cmd , &dataSize ) ;
     if( serialRet != SerialRet_ok )
     {
         return( serialRet ) ;
     }
     
     dataSize = 1 ;
-    serialRet = readFromSerialPort( &rsp , &dataSize ) ;
+    serialRet = readBufferFromSerialPort( &rsp , &dataSize ) ;
     
     if( serialRet == SerialRet_ok )
     {
@@ -431,7 +432,7 @@ static SerialRet_t libPirate_cmdRsp( uint8_t cmd , uint8_t * rsp )
     int strRet ;
 
     dataSize = 1 ;
-    serialRet = writeToSerialPort( &cmd , &dataSize ) ;
+    serialRet = writeBufferToSerialPort( &cmd , &dataSize ) ;
     if( serialRet != SerialRet_ok )
     {
         return( serialRet ) ;
@@ -439,7 +440,7 @@ static SerialRet_t libPirate_cmdRsp( uint8_t cmd , uint8_t * rsp )
     
     dataSize = sizeof( rspReset ) ;
     ( void ) memset( rspReset , '\0' , dataSize ) ;
-    serialRet = readFromSerialPort( rspReset , &dataSize ) ;
+    serialRet = readBufferFromSerialPort( rspReset , &dataSize ) ;
     
     if( serialRet == SerialRet_ok )
     {
