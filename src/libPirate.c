@@ -125,21 +125,17 @@ libPirate_t libPirate_init( const char * port )
 libPirate_t libPirate_reset( void )
 {
     SerialRet_t serialRet ;
-    uint32_t dataSize ;
-    uint8_t i , cmd , dummy ;
+    uint8_t i , dummy ;
 
-    dataSize = 1 ;
-    cmd = BUSPIRATE_CMD_HARDRESET ;
-    serialRet = writeBufferToSerialPort( &cmd , &dataSize ) ;
+    serialRet = writeByteToSerialPort( BUSPIRATE_CMD_HARDRESET ) ;
     if( serialRet != SerialRet_ok )
     {
         return( libPirate_errorSerial ) ;
     }
-    
+
     do
     {
-        dataSize = 1 ;
-        serialRet = readBufferFromSerialPort( &dummy , &dataSize ) ;
+        serialRet = readByteFromSerialPort( &dummy ) ;
     } while( serialRet == SerialRet_ok ) ;
   
     for( i = 0 ; i < BUSPIRATE_ATTEMPT_RESET ; i++ )
@@ -231,7 +227,6 @@ libPirate_t libPirate_adc( uint16_t * adc )
     SerialRet_t serialRet ;
     uint32_t    dataSize ;
     uint8_t     readAdc[ 2 ] ;
-    uint8_t     cmd ;
 
     if( libPirate_mode != libPirate_uninitialized )
     {
@@ -243,9 +238,7 @@ libPirate_t libPirate_adc( uint16_t * adc )
         return( libPirate_errorParam ) ;
     }
     
-    dataSize = 1 ;
-    cmd = BUSPIRATE_CMD_ADC ;
-    serialRet = writeBufferToSerialPort( &cmd , &dataSize ) ;
+    serialRet = writeByteToSerialPort( BUSPIRATE_CMD_ADC ) ;
     if( serialRet != SerialRet_ok )
     {
         return( libPirate_errorSerial ) ;
@@ -400,25 +393,18 @@ libPirate_t libPirate_deInit( void )
 static SerialRet_t libPirate_cmdAck( uint8_t cmd )
 {
     SerialRet_t serialRet ;
-    uint32_t    dataSize ;
     uint8_t     rsp = 0x00 ;
 
-    dataSize = 1 ;
-    serialRet = writeBufferToSerialPort( &cmd , &dataSize ) ;
+    serialRet = writeByteToSerialPort( cmd ) ;
     if( serialRet != SerialRet_ok )
     {
         return( serialRet ) ;
     }
     
-    dataSize = 1 ;
-    serialRet = readBufferFromSerialPort( &rsp , &dataSize ) ;
-    
-    if( serialRet == SerialRet_ok )
+    serialRet = readByteFromSerialPort( &rsp ) ;
+    if( ( serialRet == SerialRet_ok ) && ( rsp != BUSPIRATE_RSP ) )
     {
-        if( ( dataSize < 1 ) || ( rsp != BUSPIRATE_RSP ) )
-        {
-            serialRet = SerialRet_error ;
-        }
+        serialRet = SerialRet_error ;
     }
 
     return( serialRet ) ;
@@ -431,8 +417,7 @@ static SerialRet_t libPirate_cmdRsp( uint8_t cmd , uint8_t * rsp )
     uint32_t dataSize ;
     int strRet ;
 
-    dataSize = 1 ;
-    serialRet = writeBufferToSerialPort( &cmd , &dataSize ) ;
+    serialRet = writeByteToSerialPort( cmd ) ;
     if( serialRet != SerialRet_ok )
     {
         return( serialRet ) ;
