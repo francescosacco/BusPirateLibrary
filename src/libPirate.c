@@ -45,12 +45,12 @@
 #include <string.h>
 #include "serialport.h"
 
-#define BUSPIRATE_CMD_RESET                      0x00
+#define BUSPIRATE_CMD_RESET                      0x00 // Enter raw bitbang mode, reset to raw bitbang mode.
 #define BUSPIRATE_CMD_HARDRESET                  0x0F
 #define BUSPIRATE_CMD_CFGPERIPH                  0x40 // 0100.xxxx
 #define BUSPIRATE_CMD_ADC                        0x14
 
-#define BUSPIRATE_CMD_SPIMODE                    0x01
+#define BUSPIRATE_CMD_SPIMODE                    0x01 // Enter binary SPI mode, responds "SPI1".
 #define BUSPIRATE_CMD_SPICSLOW                   0x02 // 0000.001x
 #define BUSPIRATE_CMD_SPICSHIGH                  0x03 // 0000.001x
 #define BUSPIRATE_CMD_SPISPEED                   0x60 // 0110.0xxx
@@ -68,8 +68,11 @@
 #define BUSPIRATE_MASK_SPICFG_IDLEHIGHCLKRAISE   0x06 // IDLE = 1 , CLOCK Raise
 #define BUSPIRATE_MASK_SPICFG_IDLEHIGHCLKFALL    0x04 // IDLE = 1 , CLOCK Fall
 
+#define BUSPIRATE_CMD_I2CMODE                    0x02 // Enter binary I2C mode, responds "I2C1".
+
 #define BUSPIRATE_RSP_RESET                      "BBIO1"
 #define BUSPIRATE_RSP_SPIMODE                    "SPI1"
+#define BUSPIRATE_RSP_I2CMODE                    "I2C1"
 #define BUSPIRATE_RSP                            0x01
 
 #define BUSPIRATE_ATTEMPT_RESET                  20
@@ -91,12 +94,21 @@ libPirate_t libPirate_init( const char * port )
     SerialRet_t serialRet ;
     uint8_t i ;
 
+    /**********
+     *
+     * Open serial port:
+     *   - Speed     : 115200bps
+     *   - Data Size : 8 bits
+     *   - Parity    : None
+     *   - Stop bit  : 1
+     *
+     **********/
     serialRet = openSerialPort( port , 115200 , Stopbit_one , Parity_off , Handshake_none ) ;
     if( serialRet != SerialRet_ok )
     {
         return( libPirate_errorSerial ) ;
     }
-    
+
     for( i = 0 ; i < BUSPIRATE_ATTEMPT_RESET ; i++ )
     {
         serialRet = libPirate_cmdRsp( BUSPIRATE_CMD_RESET , BUSPIRATE_RSP_RESET ) ;
@@ -173,6 +185,24 @@ libPirate_t libPirate_power( libPiratePower_t power )
         return( libPirate_errorNotInit ) ;
     }
 
+    /**********
+     *
+     * Configure peripherals:
+     *
+     *    7     6     5     4     3     2     1     0
+     * +-----+-----+-----+-----+-----+-----+-----+-----+
+     * |  0  |  1  |  0  |  0  |  W  |  X  |  Y  |  Z  |
+     * +-----+-----+-----+-----+-----+-----+-----+-----+
+     *  \__________ __________/ \_ _/ \_ _/ \_ _/ \_ _/
+     *             |              |     |     |     |
+     *             |              |     |     |     +--> CS       : 1 - Enable, 0 - Disable.
+     *             |              |     |     +--------> Aux      : 1 - Enable, 0 - Disable.
+     *             |              |     +--------------> Pull-ups : 1 - Enable, 0 - Disable.
+     *             |              +--------------------> Power    : 1 - Enable, 0 - Disable.
+     *             +-----------------------------------> Command  : 40h - Configure peripherals.
+     *
+     **********/
+    
     libPirate_configPeriph &= 0x0F ;
     libPirate_configPeriph |= BUSPIRATE_CMD_CFGPERIPH ;
     if( power == libPiratePower_on )

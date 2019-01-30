@@ -45,11 +45,11 @@
 
 typedef enum LIBPIRATE_T
 {
-    libPirate_ok ,
+    libPirate_ok           ,
     libPirate_errorNotInit ,
-    libPirate_errorInit ,
-    libPirate_errorParam ,
-    libPirate_errorSerial ,
+    libPirate_errorInit    ,
+    libPirate_errorParam   ,
+    libPirate_errorSerial  ,
     libPirate_error
 } libPirate_t ;
 

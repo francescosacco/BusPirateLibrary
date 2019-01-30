@@ -44,6 +44,7 @@
  * Version log. 
  *
  * 2018-12-19 - 0.0.0 - Initial version.
+ * 2019-01-29 - 0.1.0 - Add byte instructions.
  *
  **********/
 
@@ -59,8 +60,8 @@
   #define _T(x)                                  x
 #endif
 
-#define ASCII_XON       0x11
-#define ASCII_XOFF      0x13
+#define ASCII_XON                                0x11
+#define ASCII_XOFF                               0x13
 
 static HANDLE hSerial = INVALID_HANDLE_VALUE ;
 
@@ -188,7 +189,7 @@ SerialRet_t openSerialPort( const char * portname , uint32_t baudrate , Stopbit_
      * - WORD  wReserved1 : Reserved; do not use.
      *
      **********/
-    
+
     dcbSerialParams.DCBlength = sizeof( dcbSerialParams ) ;
     boolRet = GetCommState( hSerial, &dcbSerialParams ) ;
     if( boolRet == FALSE )
@@ -304,7 +305,7 @@ SerialRet_t openSerialPort( const char * portname , uint32_t baudrate , Stopbit_
      * DWORD WriteTotalTimeoutConstant   : A constant used to calculate the total time-out period for write operations, in milliseconds.
      *
      **********/
-    
+
     timeouts.ReadIntervalTimeout         = 50 ;
     timeouts.ReadTotalTimeoutConstant    = 50 ;
     timeouts.ReadTotalTimeoutMultiplier  = 10 ;
