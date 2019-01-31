@@ -40,8 +40,6 @@
  **/
 #include "libPirate.h"
 
-#include <stdio.h>
-
 #include <string.h>
 #include "serialport.h"
 
@@ -69,6 +67,7 @@
 #define BUSPIRATE_MASK_SPICFG_IDLEHIGHCLKFALL    0x04 // IDLE = 1 , CLOCK Fall
 
 #define BUSPIRATE_CMD_I2CMODE                    0x02 // Enter binary I2C mode, responds "I2C1".
+#define BUSPIRATE_CMD_SETI2CSPEED                0x60 // Set I2C Speed - 011000xx
 
 #define BUSPIRATE_RSP_RESET                      "BBIO1"
 #define BUSPIRATE_RSP_SPIMODE                    "SPI1"
@@ -114,6 +113,7 @@ libPirate_t libPirate_init( const char * port )
         serialRet = libPirate_cmdRsp( BUSPIRATE_CMD_RESET , BUSPIRATE_RSP_RESET ) ;
         if( serialRet == SerialRet_ok )
         {
+            libPirate_mode = libPirate_uninitialized ;
             break ;
         }
         else if( serialRet == SerialRet_errorTimeout )
@@ -139,12 +139,14 @@ libPirate_t libPirate_reset( void )
     SerialRet_t serialRet ;
     uint8_t i , dummy ;
 
+    // Send Hard Reset command.
     serialRet = writeByteToSerialPort( BUSPIRATE_CMD_HARDRESET ) ;
     if( serialRet != SerialRet_ok )
     {
         return( libPirate_errorSerial ) ;
     }
 
+    // Empty serial buffer.
     do
     {
         serialRet = readByteFromSerialPort( &dummy ) ;
@@ -199,7 +201,7 @@ libPirate_t libPirate_power( libPiratePower_t power )
      *             |              |     |     +--------> Aux      : 1 - Enable, 0 - Disable.
      *             |              |     +--------------> Pull-ups : 1 - Enable, 0 - Disable.
      *             |              +--------------------> Power    : 1 - Enable, 0 - Disable.
-     *             +-----------------------------------> Command  : 40h - Configure peripherals.
+     *             +-----------------------------------> Command  : 4xh - Configure peripherals.
      *
      **********/
     
@@ -232,6 +234,24 @@ libPirate_t libPirate_aux( libPin_t aux )
         return( libPirate_errorNotInit ) ;
     }
 
+    /**********
+     *
+     * Configure peripherals:
+     *
+     *    7     6     5     4     3     2     1     0
+     * +-----+-----+-----+-----+-----+-----+-----+-----+
+     * |  0  |  1  |  0  |  0  |  W  |  X  |  Y  |  Z  |
+     * +-----+-----+-----+-----+-----+-----+-----+-----+
+     *  \__________ __________/ \_ _/ \_ _/ \_ _/ \_ _/
+     *             |              |     |     |     |
+     *             |              |     |     |     +--> CS       : 1 - Enable, 0 - Disable.
+     *             |              |     |     +--------> Aux      : 1 - Enable, 0 - Disable.
+     *             |              |     +--------------> Pull-ups : 1 - Enable, 0 - Disable.
+     *             |              +--------------------> Power    : 1 - Enable, 0 - Disable.
+     *             +-----------------------------------> Command  : 4xh - Configure peripherals.
+     *
+     **********/
+
     libPirate_configPeriph &= 0x0F ;
     libPirate_configPeriph |= BUSPIRATE_CMD_CFGPERIPH ;
     if( aux == libPin_low )
@@ -256,6 +276,7 @@ libPirate_t libPirate_adc( uint16_t * adc )
 {
     SerialRet_t serialRet ;
     uint32_t    dataSize ;
+    uint16_t    dataRet ;
     uint8_t     readAdc[ 2 ] ;
 
     if( libPirate_mode != libPirate_uninitialized )
@@ -274,17 +295,29 @@ libPirate_t libPirate_adc( uint16_t * adc )
         return( libPirate_errorSerial ) ;
     }
     
+    /**********
+     *
+     * ADC data:
+     *
+     *    7     6     5     4     3     2     1     0
+     * +-----+-----+-----+-----+-----+-----+-----+-----+
+     * |          MSB          |          LSB          |
+     * +-----+-----+-----+-----+-----+-----+-----+-----+
+     *
+     **********/
+    
     dataSize = 2 ;
     serialRet = readBufferFromSerialPort( readAdc , &dataSize ) ;
-    if( serialRet != SerialRet_ok )
+    if( ( serialRet != SerialRet_ok ) || ( dataSize != 2 ) )
     {
         return( libPirate_errorSerial ) ;
     }
 
-    *adc = readAdc[ 0 ] ;
-    ( *adc ) <<= 8 ;
-    *adc |= readAdc[ 1 ] ;
-    
+    dataRet   = ( uint16_t ) readAdc[ 0 ] ;
+    dataRet <<= 8 ;
+    dataRet  |= ( uint16_t ) readAdc[ 1 ] ;
+    *adc = dataRet ;
+
     return( libPirate_ok ) ;
 }
 
@@ -293,6 +326,11 @@ libPirate_t libPirate_spiConfig( libSpiSpeed_t spiSpeed , libPin_t spiIdle , lib
     SerialRet_t serialRet ;
     uint8_t data ;
     
+    if( libPirate_mode != libPirate_uninitialized )
+    {
+        return( libPirate_errorNotInit ) ;
+    }
+
     serialRet = libPirate_cmdRsp( BUSPIRATE_CMD_SPIMODE , BUSPIRATE_RSP_SPIMODE ) ;
     if( serialRet != SerialRet_ok )
     {
@@ -336,6 +374,37 @@ libPirate_t libPirate_spiConfig( libSpiSpeed_t spiSpeed , libPin_t spiIdle , lib
     return( libPirate_ok ) ;
 }
 
+libPirate_t libPirate_i2cConfig( libI2cSpeed_t i2cSpeed )
+{
+    SerialRet_t serialRet ;
+    uint8_t data ;
+    
+    if( libPirate_mode != libPirate_uninitialized )
+    {
+        return( libPirate_errorNotInit ) ;
+    }
+
+    serialRet = libPirate_cmdRsp( BUSPIRATE_CMD_I2CMODE , BUSPIRATE_RSP_I2CMODE ) ;
+    if( serialRet != SerialRet_ok )
+    {
+        return( libPirate_errorInit ) ;
+    }
+
+    data = ( uint8_t ) i2cSpeed ;
+    data &= 0x03 ;
+    data |= BUSPIRATE_CMD_SETI2CSPEED ;
+
+    serialRet = libPirate_cmdAck( data ) ;
+    if( serialRet != SerialRet_ok )
+    {
+        return( libPirate_errorInit ) ;
+    }
+
+    libPirate_mode = libPirate_i2c ;
+    
+    return( libPirate_ok ) ;
+}
+
 libPirate_t libPirate_spiCS( libSpiCS_t spiCS )
 {
     SerialRet_t serialRet ;
@@ -375,22 +444,42 @@ libPirate_t libPirate_spiTransfer( uint8_t * buffer , uint16_t bufSize )
 
     do
     {
+        // It can transfer maximum 16 bytes each iteration.
         blockTransfer = ( bufSize > 16 ) ? ( 16 ) : ( bufSize ) ;
+
+        /**********
+         *
+         * Bulk SPI transfer:
+         *
+         *    7     6     5     4     3     2     1     0
+         * +-----+-----+-----+-----+-----+-----+-----+-----+--- -- -   - -- ---+
+         * |  0  |  0  |  0  |  1  |                       |                   |
+         * +-----+-----+-----+-----+-----+-----+-----+-----+--- -- -   - -- ---+
+         *  \__________ __________/ \__________ __________/ \________ ________/
+         *             |                       |                     |
+         *             |                       |                     +---------> Payload      : From 1 to 16 bytes.
+         *             |                       +-------------------------------> Payload Size : Number of bytes - 1.
+         *             +-------------------------------------------------------> Command      : 1xh
+         *
+         **********/
         
         data  = ( uint8_t ) ( blockTransfer - 1 ) ;
+        data &= 0x0F ;
         data |= BUSPIRATE_CMD_SPIBULKTRANSFER ;
         serialRet = libPirate_cmdAck( data ) ;
         if( serialRet != SerialRet_ok )
         {
             return( libPirate_errorInit ) ;
         }
-        
+
+        // Write data.
         serialRet = writeBufferToSerialPort( buffer + indexTransfer , &blockTransfer ) ;
         if( serialRet != SerialRet_ok )
         {
             return( serialRet ) ;
         }
-        
+
+        // Read data.
         dataSize = blockTransfer ;
         serialRet = readBufferFromSerialPort( buffer + indexTransfer , &dataSize ) ;
         if( serialRet != SerialRet_ok )
@@ -409,6 +498,7 @@ libPirate_t libPirate_deInit( void )
 {
     SerialRet_t serialRet ;
 
+    // Close serial port.
     serialRet = closeSerialPort() ;
     if( serialRet != SerialRet_ok )
     {
@@ -425,12 +515,14 @@ static SerialRet_t libPirate_cmdAck( uint8_t cmd )
     SerialRet_t serialRet ;
     uint8_t     rsp = 0x00 ;
 
+    // Send command.
     serialRet = writeByteToSerialPort( cmd ) ;
     if( serialRet != SerialRet_ok )
     {
         return( serialRet ) ;
     }
     
+    // Received confirmation.
     serialRet = readByteFromSerialPort( &rsp ) ;
     if( ( serialRet == SerialRet_ok ) && ( rsp != BUSPIRATE_RSP ) )
     {
@@ -447,13 +539,15 @@ static SerialRet_t libPirate_cmdRsp( uint8_t cmd , uint8_t * rsp )
     uint32_t dataSize ;
     int strRet ;
 
+    // Send command.
     serialRet = writeByteToSerialPort( cmd ) ;
     if( serialRet != SerialRet_ok )
     {
         return( serialRet ) ;
     }
     
-    dataSize = sizeof( rspReset ) ;
+    // Received confirmation.
+    dataSize = sizeof( rspReset ) - 1 ;
     ( void ) memset( rspReset , '\0' , dataSize ) ;
     serialRet = readBufferFromSerialPort( rspReset , &dataSize ) ;
     

@@ -65,6 +65,14 @@ typedef enum LIBSPISPEED_T
     libSpiSpeed_8MHz   = 0x07
 } libSpiSpeed_t ;
 
+typedef enum LIBI2CSPEED_T
+{
+    libI2cSpeed_5kHz   = 0x00 , // xxxx.xx00
+    libI2cSpeed_50kHz  = 0x01 , // xxxx.xx01
+    libI2cSpeed_100kHz = 0x02 , // xxxx.xx10
+    libI2cSpeed_400kHz = 0x03   // xxxx.xx11
+} libI2cSpeed_t ;
+
 typedef enum LIBPIN_T
 {
     libPin_low ,
@@ -98,6 +106,8 @@ libPirate_t libPirate_adc( uint16_t * adc ) ;
 libPirate_t libPirate_spiConfig( libSpiSpeed_t spiSpeed , libPin_t spiIdle , libSpiClk_t spiClk ) ;
 libPirate_t libPirate_spiCS( libSpiCS_t spiCS ) ;
 libPirate_t libPirate_spiTransfer( uint8_t * buffer , uint16_t bufSize ) ;
+
+libPirate_t libPirate_i2cConfig( libI2cSpeed_t i2cSpeed ) ;
 
 libPirate_t libPirate_deInit( void ) ;
 
