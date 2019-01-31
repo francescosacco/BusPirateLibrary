@@ -73,7 +73,7 @@ static HANDLE hSerial = INVALID_HANDLE_VALUE ;
  * \param parity        the parity (even, odd, off or mark)
  * \return            HANDLE to the serial port
  **/
-SerialRet_t openSerialPort( const char * portname , uint32_t baudrate , Stopbit_t stopbits , Parity_t parity , Handshake_t handshake )
+SerialRet_t openSerialPort( const char * portname , uint32_t baudrate , uint8_t dataSize , Stopbit_t stopbits , Parity_t parity , Handshake_t handshake )
 {
     BOOL boolRet ;
 
@@ -198,7 +198,7 @@ SerialRet_t openSerialPort( const char * portname , uint32_t baudrate , Stopbit_
     }
 
     dcbSerialParams.BaudRate = ( DWORD ) baudrate ;
-    dcbSerialParams.ByteSize = 8 ;
+    dcbSerialParams.ByteSize = ( uint8_t ) dataSize ;
     
     switch( stopbits )
     {

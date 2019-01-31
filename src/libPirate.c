@@ -102,7 +102,7 @@ libPirate_t libPirate_init( const char * port )
      *   - Stop bit  : 1
      *
      **********/
-    serialRet = openSerialPort( port , 115200 , Stopbit_one , Parity_off , Handshake_none ) ;
+    serialRet = openSerialPort( port , 115200 , 8 , Stopbit_one , Parity_off , Handshake_none ) ;
     if( serialRet != SerialRet_ok )
     {
         return( libPirate_errorSerial ) ;

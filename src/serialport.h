@@ -45,6 +45,7 @@
  * Version log. 
  *
  * 2018-12-19 - 0.0.0 - Initial version.
+ * 2019-01-29 - 0.1.0 - Add byte instructions and data size.
  *
  **********/
 #ifndef SERIALPORT_H
@@ -77,49 +78,67 @@ typedef enum HANDSHAKE_T
 
 typedef enum SERIARET
 {
-    SerialRet_ok ,
-    SerialRet_errorParam ,
-    SerialRet_errorToOpen ,
+    SerialRet_ok               ,
+    SerialRet_errorParam       ,
+    SerialRet_errorToOpen      ,
     SerialRet_errorAlreadyOpen ,
-    SerialRet_errorNotOpen ,
-    SerialRet_errorDCB ,
-    SerialRet_errorTimeout ,
+    SerialRet_errorNotOpen     ,
+    SerialRet_errorDCB         ,
+    SerialRet_errorTimeout     ,
     SerialRet_error
 } SerialRet_t ;
 
+/**
+ * \brief Opens a new connection to a serial port.
+ *
+ * \param  portname  Name of the serial port(COM1 - COM9 or \\\\.\\COM1-COM256)
+ * \param  baudrate  Baudrate of this port (for example 9600)
+ * \param  dataSize  Number of data bits.
+ * \param  stopbits  Number of stop-bits.
+ * \param  parity    Parity (even, odd, off or mark)
+ * \return           SerialRet_ok if there was no problem.
+ **/
+SerialRet_t openSerialPort( const char * portname , uint32_t baudrate , uint8_t dataSize , Stopbit_t stopbits , Parity_t parity , Handshake_t handshake ) ;
 
 /**
- * \brief Opens a new connection to a serial port
- * \param portname        name of the serial port(COM1 - COM9 or \\\\.\\COM1-COM256)
- * \param baudrate        the baudrate of this port (for example 9600)
- * \param stopbits        th nuber of stoppbits (one, onePointFive or two)
- * \param parity        the parity (even, odd, off or mark)
- * \return            HANDLE to the serial port
+ * \brief Read single byte from the serial port.
+ *
+ * \param  buffer  Pointer to the buffer where the read data will be written.
+ * \return         SerialRet_ok if there was no problem.
  **/
-SerialRet_t openSerialPort( const char * portname , uint32_t baudrate , Stopbit_t stopbits , Parity_t parity , Handshake_t handshake ) ;
-
 SerialRet_t readByteFromSerialPort( uint8_t * buffer ) ;
 
 /**
- * \brief Read data from the serial port
- * \param hSerial        File HANDLE to the serial port
- * \param buffer        pointer to the area where the read data will be written
- * \param buffersize    maximal size of the buffer area
- * \return                amount of data that was read
+ * \brief Read data buffer from the serial port.
+ *
+ * \param  buffer      Pointer to the buffer where the read data will be written.
+ * \param  buffersize  Maximum size of the buffer, also return number of written bytes.
+ * \return             SerialRet_ok if there was no problem.
  **/
 SerialRet_t readBufferFromSerialPort( uint8_t * buffer , uint32_t * pbuffersize ) ;
 
+/**
+ * \brief Write single byte to the serial port.
+ *
+ * \param  data  Data to be send to the serial port.
+ * \return       SerialRet_ok if there was no problem.
+ **/
 SerialRet_t writeByteToSerialPort( uint8_t data ) ;
 
 /**
- * \brief write data to the serial port
- * \param hSerial    File HANDLE to the serial port
- * \param buffer    pointer to the area where the read data will be read
- * \param length    amount of data to be read
- * \return            amount of data that was written
+ * \brief Write buffer to the serial port.
+ *
+ * \param  buffer   Pointer to the buffer where the read data will be read.
+ * \param  plength  Maximum size of the buffer, also return number of read bytes.
+ * \return          SerialRet_ok if there was no problem.
  **/
 SerialRet_t writeBufferToSerialPort( uint8_t * data, uint32_t * plength ) ;
 
+/**
+ * \brief Close serial port.
+ *
+ * \return SerialRet_ok if there was no problem.
+ **/
 SerialRet_t closeSerialPort( void ) ;
 
 #endif // SERIALPORT_H
