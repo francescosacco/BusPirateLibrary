@@ -44,7 +44,7 @@
  * Version log. 
  *
  * 2018-12-19 - 0.0.0 - Initial version.
- * 2019-01-29 - 0.1.0 - Add byte instructions.
+ * 2019-01-29 - 0.1.0 - Add byte instructions and data size.
  *
  **********/
 

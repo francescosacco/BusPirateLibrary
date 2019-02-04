@@ -69,9 +69,14 @@
 #define BUSPIRATE_CMD_I2CMODE                    0x02 // Enter binary I2C mode, responds "I2C1".
 #define BUSPIRATE_CMD_SETI2CSPEED                0x60 // Set I2C Speed - 011000xx
 
+#define BUSPIRATE_CMD_UARTMODE                   0x03 // Enter binary I2C mode, responds "ART1".
+#define BUSPIRATE_CMD_SETUARTSPEED               0x60 // Set UART Speed - 0110xxxx
+#define BUSPIRATE_CMD_CONFIGUREUART              0x80 // Configure UART - 100wxxyz
+
 #define BUSPIRATE_RSP_RESET                      "BBIO1"
 #define BUSPIRATE_RSP_SPIMODE                    "SPI1"
 #define BUSPIRATE_RSP_I2CMODE                    "I2C1"
+#define BUSPIRATE_RSP_UARTMODE                   "ART1"
 #define BUSPIRATE_RSP                            0x01
 
 #define BUSPIRATE_ATTEMPT_RESET                  20
@@ -80,7 +85,8 @@ enum LIBPPIRATE_MODE
 {
     libPirate_uninitialized ,
     libPirate_spi ,
-    libPirate_i2c
+    libPirate_i2c ,
+    libPirate_uart
 } libPirate_mode = libPirate_uninitialized ;
 
 uint8_t libPirate_configPeriph ;
@@ -401,6 +407,91 @@ libPirate_t libPirate_i2cConfig( libI2cSpeed_t i2cSpeed )
     }
 
     libPirate_mode = libPirate_i2c ;
+    
+    return( libPirate_ok ) ;
+}
+
+libPirate_t libPirate_uartConfig( libUartSpeed_t uartSpeed , libPirateParity_t uartParity , libPirateStopbit_t uartStopbit )
+{
+    SerialRet_t serialRet ;
+    uint8_t data ;
+    
+    if( libPirate_mode != libPirate_uninitialized )
+    {
+        return( libPirate_errorNotInit ) ;
+    }
+
+    serialRet = libPirate_cmdRsp( BUSPIRATE_CMD_UARTMODE , BUSPIRATE_RSP_UARTMODE ) ;
+    if( serialRet != SerialRet_ok )
+    {
+        return( libPirate_errorInit ) ;
+    }
+
+    /**********
+     *
+     * UART Speed:
+     *
+     *    7     6     5     4     3     2     1     0
+     * +-----+-----+-----+-----+-----+-----+-----+-----+
+     * |  0     1     1     0  |  X     X  |  Y  |  Z  |
+     * +-----+-----+-----+-----+-----+-----+-----+-----+
+     *  \__________ __________/ \__________ __________/
+     *             |                       |
+     *             |                       +-----------> Baudrate : 0000 -     300bps
+     *             |                                                0001 -   1.200bps
+     *             |                                                0010 -   2.400bps
+     *             |                                                0011 -   4.800bps
+     *             |                                                0100 -   9.600bps
+     *             |                                                0101 -  19.200bps
+     *             |                                                0110 -  31.250bps (MIDI)
+     *             |                                                0111 -  38.400bps
+     *             |                                                1000 -  57.600bps
+     *             |                                                1010 - 115.200bps
+     *             |
+     *             +-----------------------------------> 6xh - Command
+     *
+     **********/
+
+    data = ( uint8_t ) uartSpeed ;
+    data &= 0x0F ;
+    data |= BUSPIRATE_CMD_SETUARTSPEED ;
+
+    serialRet = libPirate_cmdAck( data ) ;
+    if( serialRet != SerialRet_ok )
+    {
+        return( libPirate_errorInit ) ;
+    }
+
+    /**********
+     *
+     * Configure UART:
+     *
+     *    7     6     5     4     3     2     1     0
+     * +-----+-----+-----+-----+-----+-----+-----+-----+
+     * |  1     0     0  |  W  |  X     X  |  Y  |  Z  |
+     * +-----+-----+-----+-----+-----+-----+-----+-----+
+     *  \_______ _______/ \_ _/ \____ ____/ \_ _/ \_ _/
+     *          |           |        |        |     |
+     *          |           |        |        |     +--> Idle polarity - 0 to idle as 1, 1 to idle as 0.
+     *          |           |        |        +--------> Top bit - 0 to 2 and 1 to 2.
+     *          |           |        +-----------------> Databits and parity - 0 to 8N, 1 to 8E, 2 to 8O and 3 to 9N.
+     *          |           +--------------------------> Pin Output - 0 to HiZ, 1 to 3V3.
+     *          +--------------------------------------> 0x80 - Command
+     *
+     **********/
+    
+    data  = BUSPIRATE_CMD_CONFIGUREUART ; // 100x.xxxx - Command.
+    data |= ( uint8_t ) 0x10            ; // xxx1.xxxx - Push Pull.
+    data |= ( uint8_t ) uartParity      ; // xxxx.00xx - Parity and databits.
+    data |= ( uint8_t ) uartStopbit     ; // xxxx.xx0x - Stopbits
+
+    serialRet = libPirate_cmdAck( data ) ;
+    if( serialRet != SerialRet_ok )
+    {
+        return( libPirate_errorInit ) ;
+    }
+
+    libPirate_mode = libPirate_uart ;
     
     return( libPirate_ok ) ;
 }

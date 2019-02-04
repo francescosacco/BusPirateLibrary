@@ -73,6 +73,20 @@ typedef enum LIBI2CSPEED_T
     libI2cSpeed_400kHz = 0x03   // xxxx.xx11
 } libI2cSpeed_t ;
 
+typedef enum LIBUARTSPEED_T
+{
+    libUartSpeed_300bps    = 0x00 , // xxxx.0000
+    libUartSpeed_1200bps   = 0x01 , // xxxx.0001
+    libUartSpeed_2400bps   = 0x02 , // xxxx.0010
+    libUartSpeed_4800bps   = 0x03 , // xxxx.0011
+    libUartSpeed_9600bps   = 0x04 , // xxxx.0100
+    libUartSpeed_19200bps  = 0x05 , // xxxx.0101
+    libUartSpeed_31250bps  = 0x06 , // xxxx.0110
+    libUartSpeed_38400bps  = 0x07 , // xxxx.0111
+    libUartSpeed_57600bps  = 0x08 , // xxxx.1000
+    libUartSpeed_115200bps = 0x0A , // xxxx.1010
+} libUartSpeed_t ;
+
 typedef enum LIBPIN_T
 {
     libPin_low ,
@@ -97,6 +111,19 @@ typedef enum LIBPIRATEPOWER_T
     libPiratePower_on
 } libPiratePower_t ;
 
+typedef enum LIBPIRATEPARITY_T
+{
+    libPirateParity_off  = 0x00 , // xxxx.00xx
+    libPirateParity_even = 0x04 , // xxxx.01xx
+    libPirateParity_odd  = 0x08   // xxxx.10xx ,
+} libPirateParity_t ;
+
+typedef enum LIBPIRATESTOPBIT_T
+{
+    libPirateStopbit_one = 0x00 , // xxxx.xx0x
+    libPirateStopbit_two = 0x02 , // xxxx.xx1x
+} libPirateStopbit_t ;
+
 libPirate_t libPirate_init( const char * port ) ;
 libPirate_t libPirate_reset( void ) ; 
 libPirate_t libPirate_power( libPiratePower_t power ) ; 
@@ -108,6 +135,8 @@ libPirate_t libPirate_spiCS( libSpiCS_t spiCS ) ;
 libPirate_t libPirate_spiTransfer( uint8_t * buffer , uint16_t bufSize ) ;
 
 libPirate_t libPirate_i2cConfig( libI2cSpeed_t i2cSpeed ) ;
+
+libPirate_t libPirate_uartConfig( libUartSpeed_t uartSpeed , libPirateParity_t uartParity , libPirateStopbit_t uartStopbit ) ;
 
 libPirate_t libPirate_deInit( void ) ;
 
