@@ -121,7 +121,7 @@ typedef enum LIBPIRATEPARITY_T
 typedef enum LIBPIRATESTOPBIT_T
 {
     libPirateStopbit_one = 0x00 , // xxxx.xx0x
-    libPirateStopbit_two = 0x02 , // xxxx.xx1x
+    libPirateStopbit_two = 0x02   // xxxx.xx1x
 } libPirateStopbit_t ;
 
 libPirate_t libPirate_init( const char * port ) ;
@@ -137,6 +137,7 @@ libPirate_t libPirate_spiTransfer( uint8_t * buffer , uint16_t bufSize ) ;
 libPirate_t libPirate_i2cConfig( libI2cSpeed_t i2cSpeed ) ;
 
 libPirate_t libPirate_uartConfig( libUartSpeed_t uartSpeed , libPirateParity_t uartParity , libPirateStopbit_t uartStopbit ) ;
+libPirate_t libPirate_uartSend( uint8_t * buffer , uint16_t bufSize ) ;
 
 libPirate_t libPirate_deInit( void ) ;
 

@@ -100,6 +100,15 @@ int main( void )
     libRet = libPirate_i2cConfig( libI2cSpeed_400kHz ) ;
     libPirate_printState( "libPirate_i2cConfig()" , libRet ) ;
     
+    libRet = libPirate_reset() ;
+    libPirate_printState( "libPirate_reset()" , libRet ) ;
+    
+    libRet = libPirate_uartConfig( libUartSpeed_9600bps , libPirateParity_off , libPirateStopbit_one ) ;
+    libPirate_printState( "libPirate_uartConfig()" , libRet ) ;
+    
+    libRet = libPirate_uartSend( buffer , 20 ) ;
+    libPirate_printState( "libPirate_uartSend()" , libRet ) ;
+
     libRet = libPirate_deInit() ;
     libPirate_printState( "libPirate_deInit()" , libRet ) ;
 

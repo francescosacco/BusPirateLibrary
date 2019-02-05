@@ -70,6 +70,7 @@
 #define BUSPIRATE_CMD_SETI2CSPEED                0x60 // Set I2C Speed - 011000xx
 
 #define BUSPIRATE_CMD_UARTMODE                   0x03 // Enter binary I2C mode, responds "ART1".
+#define BUSPIRATE_CMD_UARTBULKTRANSFER           0x10 // Bulk UART write, send 1-16 bytes.
 #define BUSPIRATE_CMD_SETUARTSPEED               0x60 // Set UART Speed - 0110xxxx
 #define BUSPIRATE_CMD_CONFIGUREUART              0x80 // Configure UART - 100wxxyz
 
@@ -145,6 +146,17 @@ libPirate_t libPirate_reset( void )
     SerialRet_t serialRet ;
     uint8_t i , dummy ;
 
+    serialRet = libPirate_cmdRsp( BUSPIRATE_CMD_RESET , BUSPIRATE_RSP_RESET ) ;
+    if( serialRet != SerialRet_ok )
+    {
+        return( libPirate_errorSerial ) ;
+    }
+        
+    if( serialRet != SerialRet_ok )
+    {
+        return( libPirate_errorSerial ) ;
+    }
+
     // Send Hard Reset command.
     serialRet = writeByteToSerialPort( BUSPIRATE_CMD_HARDRESET ) ;
     if( serialRet != SerialRet_ok )
@@ -157,8 +169,8 @@ libPirate_t libPirate_reset( void )
     {
         serialRet = readByteFromSerialPort( &dummy ) ;
     } while( serialRet == SerialRet_ok ) ;
-  
-    for( i = 0 ; i < BUSPIRATE_ATTEMPT_RESET ; i++ )
+
+    for( i = 0 ; i < BUSPIRATE_ATTEMPT_RESET * 2 ; i++ )
     {
         serialRet = libPirate_cmdRsp( BUSPIRATE_CMD_RESET , BUSPIRATE_RSP_RESET ) ;
         if( serialRet == SerialRet_ok )
@@ -621,6 +633,75 @@ static SerialRet_t libPirate_cmdAck( uint8_t cmd )
     }
 
     return( serialRet ) ;
+}
+
+libPirate_t libPirate_uartSend( uint8_t * buffer , uint16_t bufSize )
+{
+    SerialRet_t serialRet ;
+    uint32_t blockTransfer , dataSize , indexTransfer = 0 ;
+    uint8_t localBuffer[ 16 ] ;
+    uint8_t data ;
+    
+    if( libPirate_mode != libPirate_uart )
+    {
+        return( libPirate_errorNotInit ) ;
+    }
+
+    if( bufSize == 0 )
+    {
+        return( libPirate_errorParam ) ;
+    }
+
+    do
+    {
+        // It can transfer maximum 16 bytes each iteration.
+        blockTransfer = ( bufSize > 16 ) ? ( 16 ) : ( bufSize ) ;
+
+        /**********
+         *
+         * Bulk UART transfer:
+         *
+         *    7     6     5     4     3     2     1     0
+         * +-----+-----+-----+-----+-----+-----+-----+-----+--- -- -   - -- ---+
+         * |  0  |  0  |  0  |  1  |                       |                   |
+         * +-----+-----+-----+-----+-----+-----+-----+-----+--- -- -   - -- ---+
+         *  \__________ __________/ \__________ __________/ \________ ________/
+         *             |                       |                     |
+         *             |                       |                     +---------> Payload      : From 1 to 16 bytes.
+         *             |                       +-------------------------------> Payload Size : Number of bytes - 1.
+         *             +-------------------------------------------------------> Command      : 1xh
+         *
+         **********/
+        
+        data  = ( uint8_t ) ( blockTransfer - 1 ) ;
+        data &= 0x0F ;
+        data |= BUSPIRATE_CMD_UARTBULKTRANSFER ;
+        serialRet = libPirate_cmdAck( data ) ;
+        if( serialRet != SerialRet_ok )
+        {
+            return( libPirate_errorInit ) ;
+        }
+
+        // Write data.
+        serialRet = writeBufferToSerialPort( buffer + indexTransfer , &blockTransfer ) ;
+        if( serialRet != SerialRet_ok )
+        {
+            return( serialRet ) ;
+        }
+
+        // Read data.
+        dataSize = blockTransfer ;
+        serialRet = readBufferFromSerialPort( buffer + indexTransfer , &dataSize ) ;
+        if( serialRet != SerialRet_ok )
+        {
+            return( serialRet ) ;
+        }
+        
+        bufSize -= blockTransfer ;
+        indexTransfer += blockTransfer ;
+    } while( bufSize > 0 ) ;
+
+    return( libPirate_ok ) ;
 }
 
 static SerialRet_t libPirate_cmdRsp( uint8_t cmd , uint8_t * rsp )
