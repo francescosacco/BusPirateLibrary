@@ -60,7 +60,9 @@ int main( void )
 
     printf( "buffer =" ) ;
     for( int i = 0 ; i < 20 ; i++ )
+    {
         printf( " %02X" , buffer[ i ] ) ;
+    }
     printf( "\n" ) ;
 
     libRet = libPirate_spiCS( libSpiCS_low ) ;
@@ -74,7 +76,9 @@ int main( void )
     
     printf( "buffer =" ) ;
     for( int i = 0 ; i < 20 ; i++ )
+    {
         printf( " %02X" , buffer[ i ] ) ;
+    }
     printf( "\n" ) ;
     
     libRet = libPirate_reset() ;

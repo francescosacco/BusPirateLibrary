@@ -115,29 +115,38 @@ libPirate_t libPirate_init( const char * port )
         return( libPirate_errorSerial ) ;
     }
 
+    // Enter raw bitbang mode.
     for( i = 0 ; i < BUSPIRATE_ATTEMPT_RESET ; i++ )
     {
+        // Send RESET command and check answer.
         serialRet = libPirate_cmdRsp( BUSPIRATE_CMD_RESET , BUSPIRATE_RSP_RESET ) ;
+        // Did we receive the correct answer?
         if( serialRet == SerialRet_ok )
         {
+            // Yes.
+            // The raw bitbang mode was initialized.
             libPirate_mode = libPirate_uninitialized ;
             break ;
         }
         else if( serialRet == SerialRet_errorTimeout )
         {
+            // No.
+            // We didn't receive any answer. Try again.
             continue ;
         }
         else
         {
+            // No.
+            // We received another answer. Return error.
             return( libPirate_errorInit ) ;
         }
     }
-    
+
     if( serialRet != SerialRet_ok )
     {
         return( libPirate_errorInit ) ;
     }
-    
+
     return( libPirate_ok ) ;
 }
 

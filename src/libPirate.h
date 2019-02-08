@@ -84,7 +84,7 @@ typedef enum LIBUARTSPEED_T
     libUartSpeed_31250bps  = 0x06 , // xxxx.0110
     libUartSpeed_38400bps  = 0x07 , // xxxx.0111
     libUartSpeed_57600bps  = 0x08 , // xxxx.1000
-    libUartSpeed_115200bps = 0x0A , // xxxx.1010
+    libUartSpeed_115200bps = 0x0A   // xxxx.1010
 } libUartSpeed_t ;
 
 typedef enum LIBPIN_T
@@ -124,9 +124,33 @@ typedef enum LIBPIRATESTOPBIT_T
     libPirateStopbit_two = 0x02   // xxxx.xx1x
 } libPirateStopbit_t ;
 
+/**
+ * \brief Initialize Bus Pirate.
+ *
+ * \param  port Serial port name.
+ * \return             libPirate_ok if there was no problem.
+ **/
 libPirate_t libPirate_init( const char * port ) ;
+
+/**
+ * \brief Firmware reset, Bus Pirate returns to the user terminal interface.
+ *
+ * \return libPirate_ok if there was no problem.
+ **/
 libPirate_t libPirate_reset( void ) ; 
+/**
+ * \brief Turn power on or off.
+ *
+ * \param  power Enum to define on or off.
+ * \return libPirate_ok if there was no problem.
+ **/
 libPirate_t libPirate_power( libPiratePower_t power ) ; 
+/**
+ * \brief Set AUX pin as high or low.
+ *
+ * \param  aux Enum to define GPIO state.
+ * \return libPirate_ok if there was no problem.
+ **/
 libPirate_t libPirate_aux( libPin_t aux ) ; 
 libPirate_t libPirate_adc( uint16_t * adc ) ;
 
